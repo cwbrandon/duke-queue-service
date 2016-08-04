@@ -48,7 +48,7 @@ public class SwaggerConfig
                 //title
                 API_NAME,
                 //description
-                "Allows the producing and consuming of messages from a queue",
+                "Allows the producing and consuming of messages from a sender",
                 //terms of service
                 null,
                 //contact email
