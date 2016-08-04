@@ -7,7 +7,7 @@ public class Constants
 
     public static final String SERVICE_NAME = "KafkaQueueService";
 
-    public static final String PRODUCE_PATH = "{sender}/produce";
+    public static final String PRODUCE_PATH = "{queue}";
 
     public static final String DATABASE_URL = "DATABASE_URL";
     public static final String DATABASE_POOL_SIZE = "DATABASE_POOL_SIZE";
