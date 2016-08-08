@@ -23,8 +23,8 @@ public class KafkaSender
     private static final String PROPERTY_VALUE_SERIALIZER = "value.serializer";
     private static final String PROPERTY_ACKS = "acks";
 
-    @Value("${kafka.broker.list}")
-    private String brokerList;
+    @Value("${kafka.bootstrap.servers}")
+    private String bootstrapServers;
 
     private Producer<String, String> producer;
 
@@ -41,8 +41,8 @@ public class KafkaSender
     Properties initializeProperties()
     {
         Properties properties = new Properties();
-        properties.put(PROPERTY_BOOTSTRAP_SERVERS, brokerList);
-        logger.info("-- initializing with broker list={}", brokerList);
+        properties.put(PROPERTY_BOOTSTRAP_SERVERS, bootstrapServers);
+        logger.info("-- initializing with bootstrap servers={}", bootstrapServers);
         properties.put(PROPERTY_KEY_SERIALIZER, StringSerializer.class.getName());
         properties.put(PROPERTY_VALUE_SERIALIZER, StringSerializer.class.getName());
         properties.put(PROPERTY_ACKS, "all");

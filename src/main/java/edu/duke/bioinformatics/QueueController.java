@@ -23,7 +23,7 @@ public class QueueController
     @Resource(name = "kafkaQueueService")
     private QueueService queueService;
 
-    @ApiOperation(value = "Sends a message to the given sender")
+    @ApiOperation(value = "Sends a message to the given queue")
     @RequestMapping(value = PRODUCE_PATH, method = RequestMethod.POST)
     public void send(@PathVariable String queue, @RequestBody String message)
     {
