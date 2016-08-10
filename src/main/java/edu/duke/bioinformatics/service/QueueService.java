@@ -7,9 +7,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 public interface QueueService
 {
-    public void send(String queue, String message);
+    void send(String queue, String message);
 
-    public void registerListeners(String queue, List<String> listeners);
+    void registerListeners(String queue, List<String> listeners);
 
-    public void deregisterListeners(String queue, List<String> listeners);
+    void deregisterListeners(String queue, List<String> listeners);
+
+    int startListeners();
+
+    void stopListeners();
 }

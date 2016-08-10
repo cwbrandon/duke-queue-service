@@ -2,28 +2,37 @@ package edu.duke.bioinformatics.service;
 
 import edu.duke.bioinformatics.domain.MessageListener;
 import edu.duke.bioinformatics.domain.Queue;
+import edu.duke.bioinformatics.queue.kafka.KafkaListener;
 import edu.duke.bioinformatics.queue.kafka.KafkaSender;
 import edu.duke.bioinformatics.repository.MessageListenerRepository;
 import edu.duke.bioinformatics.repository.QueueRepository;
-import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
-import javax.validation.constraints.NotNull;
+import javax.annotation.Resource;
+import javax.transaction.Transactional;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.IterableUtils;
+import org.apache.commons.collections4.Predicate;
 import org.apache.commons.lang3.StringUtils;
-import org.hibernate.criterion.Example;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.hibernate.validator.constraints.NotBlank;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.Resource;
-import javax.transaction.Transactional;
 
 @Transactional
 @Component
 public class KafkaQueueService implements QueueService
 {
     private static final Logger logger = LoggerFactory.getLogger(KafkaQueueService.class);
+
+    private List<KafkaListener> kafkaListeners = new ArrayList<>();
+
+    @Value("${kafka.bootstrap.servers}")
+    private String bootstrapServers;
 
     @Resource
     private KafkaSender kafkaSender;
@@ -45,6 +54,8 @@ public class KafkaQueueService implements QueueService
     {
         final Queue queueEntity = queue(queue);
 
+        logger.info("-- registering listeners={} to: {} --", listeners, queue);
+
         for (String listener : listeners)
         {
             listener = StringUtils.trimToEmpty(listener);
@@ -53,6 +64,7 @@ public class KafkaQueueService implements QueueService
             if (!registered)
             {
                 messageListenerRepository.save(new MessageListener().setQueue(queueEntity).setUrl(listener));
+                startListener(messageListener);
             }
             logger.info("-- {} " + (registered ? "already " : "")
                     + "registered for: {} --", listener, queue);
@@ -63,6 +75,9 @@ public class KafkaQueueService implements QueueService
     public void deregisterListeners(@NotBlank String queue, @NotEmpty List<String> listeners)
     {
         final Queue queueEntity = queue(queue);
+
+        logger.info("-- de-registering listeners={} from: {} --" , listeners, queue);
+
         for (String listener : listeners)
         {
             listener = StringUtils.trimToEmpty(listener);
@@ -72,9 +87,57 @@ public class KafkaQueueService implements QueueService
             if (!deregistered)
             {
                 messageListenerRepository.delete(messageListener);
+
+                synchronized (kafkaListeners)
+                {
+                    final KafkaListener matchedListener = findListener(queue, listeners);
+                    if (matchedListener != null)
+                    {
+                        kafkaListeners.remove(matchedListener);
+                    }
+                }
             }
             logger.info("-- {} " + (deregistered ? "already " : "")
                     + "de-registered for: {} --", listener, queue);
+        }
+    }
+
+    public KafkaListener findListener(@NotBlank String queue, @NotEmpty List<String> listeners)
+    {
+        return IterableUtils.find(
+            kafkaListeners,
+            (kafkaListener) -> queue.equalsIgnoreCase(kafkaListener.getTopic()) &&
+                    listeners.contains(kafkaListener.getListenerUrl()));
+    }
+
+    @Override
+    public int startListeners()
+    {
+        final List<MessageListener> messageListeners = messageListenerRepository.findAll(new Sort("queue"));
+        for (final MessageListener messageListener : messageListeners)
+        {
+            startListener(messageListener);
+        }
+        return kafkaListeners.size();
+    }
+
+    private void startListener(MessageListener messageListener)
+    {
+        final KafkaListener listener = new KafkaListener(
+            bootstrapServers, messageListener.getQueue().getName(), messageListener.getUrl());
+        listener.start();
+        synchronized (kafkaListeners)
+        {
+            kafkaListeners.add(listener);
+        }
+    }
+
+    @Override
+    public void stopListeners()
+    {
+        for (final KafkaListener kafkaListener : kafkaListeners)
+        {
+            kafkaListener.close();
         }
     }
 

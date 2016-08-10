@@ -4,8 +4,8 @@ import javax.persistence.*;
 
 @Entity
 @Table(
-        name = "message_listener",
-        uniqueConstraints = @UniqueConstraint(columnNames={"queue_fk", "url"})
+    name = "message_listener",
+    uniqueConstraints = @UniqueConstraint(columnNames={"queue_fk", "url"})
 )
 public class MessageListener
 {

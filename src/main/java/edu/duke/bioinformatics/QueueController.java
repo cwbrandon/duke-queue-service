@@ -37,8 +37,6 @@ public class QueueController
     @RequestMapping(value = REGISTER_PATH, method = RequestMethod.POST)
     public void registerListeners(@PathVariable String queue, @RequestBody List<String> listeners)
     {
-        logger.info("-- registering listeners={} to: {} --", listeners, queue);
-
         queueService.registerListeners(queue, listeners);
     }
 
@@ -46,8 +44,6 @@ public class QueueController
     @RequestMapping(value = DEREGISTER_PATH, method = RequestMethod.POST)
     public void deregisterListeners(@PathVariable String queue, @RequestBody List<String> listeners)
     {
-        logger.info("-- de-registering listeners={} from: {} --" , listeners, queue);
-
         queueService.deregisterListeners(queue, listeners);
     }
 }
