@@ -63,7 +63,7 @@ public class KafkaQueueService implements QueueService
             boolean registered = messageListener != null;
             if (!registered)
             {
-                messageListenerRepository.save(new MessageListener().setQueue(queueEntity).setUrl(listener));
+                messageListener = messageListenerRepository.save(new MessageListener().setQueue(queueEntity).setUrl(listener));
                 startListener(messageListener);
             }
             logger.info("-- {} " + (registered ? "already " : "")
@@ -123,6 +123,8 @@ public class KafkaQueueService implements QueueService
 
     private void startListener(MessageListener messageListener)
     {
+        System.out.println("messageListener===: " + messageListener);
+        System.out.println("messageListener====: " + messageListener.getQueue());
         final KafkaListener listener = new KafkaListener(
             bootstrapServers, messageListener.getQueue().getName(), messageListener.getUrl());
         listener.start();
